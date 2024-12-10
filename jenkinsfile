@@ -1,0 +1,54 @@
+pipeline {
+    agent any
+    environment {
+        REPO_URL = 'https://github.com/AhM3dAb/TPopenshift'
+        BRANCH = 'main'
+        IMAGE_NAME = 'nodejs-web-app'
+        IMAGE_TAG = 'latest'
+        KUBECONFIG_PATH = '/path/to/kubeconfig' // Replace with actual path to kubeconfig
+        K8S_DIR = './k8s' // Directory where YAML files are stored
+    }
+    stages {
+        stage('Clone Repository') {
+            steps {
+                script {
+                    git branch: "${BRANCH}", url: "${REPO_URL}"
+                }
+            }
+        }
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
+                }
+            }
+        }
+        stage('Push Docker Image to Minikube') {
+            steps {
+                script {
+                    sh "eval $(minikube docker-env)" // Use Minikube's Docker environment
+                    sh "docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAGE_NAME}:${IMAGE_TAG}"
+                    echo "Image tagged and ready for Minikube."
+                }
+            }
+        }
+        stage('Deploy to Kubernetes') {
+            steps {
+                script {
+                    withEnv(["KUBECONFIG=${KUBECONFIG_PATH}"]) {
+                        sh "kubectl apply -f ${K8S_DIR}/deployment.yaml"
+                        sh "kubectl apply -f ${K8S_DIR}/service.yaml"
+                    }
+                }
+            }
+        }
+    }
+    post {
+        success {
+            echo 'Pipeline executed successfully!'
+        }
+        failure {
+            echo 'Pipeline failed.'
+        }
+    }
+}
