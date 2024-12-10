@@ -5,8 +5,8 @@ pipeline {
         BRANCH = 'main'
         IMAGE_NAME = 'nodejs-web-app'
         IMAGE_TAG = 'latest'
-        KUBECONFIG_PATH = '/path/to/kubeconfig' // Replace with actual path to kubeconfig
-        K8S_DIR = './k8s' // Directory where YAML files are stored
+        KUBECONFIG_PATH = "${env.HOME}/.kube/config" // Default kubeconfig path
+        K8S_DIR = './' // Directory where YAML files are stored
     }
     stages {
         stage('Clone Repository') {
@@ -26,7 +26,7 @@ pipeline {
         stage('Push Docker Image to Minikube') {
             steps {
                 script {
-                    sh "eval $(minikube docker-env)" // Use Minikube's Docker environment
+                    sh "eval $(minikube docker-env)" 
                     sh "docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAGE_NAME}:${IMAGE_TAG}"
                     echo "Image tagged and ready for Minikube."
                 }
